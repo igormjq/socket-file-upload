@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <link href="https://fonts.googleapis.com/css?family=Montserrat:400,500,600,700" rel="stylesheet">
+  <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
   <title>App maluco</title>
   <style>
     body {
@@ -59,13 +59,14 @@
       <ul id="songs">
         <li>
           <audio controls>
-            <source type="audio/mp3" src="http://localhost:3000/songs/1.mp3" ></source>
+            <source type="audio/mp3" src="http://localhost:3000/songs/metallica-seek-and-destroy.mp3" ></source>
           </audio>
         </li>
       </ul>
     </div>
   </div>
 
+  <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
   <script src="/siofu/client.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -77,22 +78,34 @@
     const $successAlert = $('.alert');
     const $songsList = $('#songs');
 
-    const renderSongs = songs => {
-      return `${ songs.map(song => `<li><audio controls>
-        <source 
-          type="audio/mp3"
-          src=${song}
-        ></source>
-      </audio> </li>` ) }`
+    const renderSongs = data => {
+      const template = song => `
+          <li>
+            <audio controls>
+              <source 
+                type="audio/mp3"
+                src=${window.location.origin}${encodeURI(song)}>
+              </source>
+            </audio>
+          </li>`;
+
+      if(Array.isArray(data)) {
+        return $songsList.innerHTML = data.map(song => template(song)).join('');
+      }
+      
+      let $element = document.createElement('li');
+      $element.innerHTML = template(data);
+
+      return $songsList.appendChild($element);
+      
     };
 
     uploader.addEventListener('start', ({ file }) => {
-
       if(file.type !== 'audio/mp3') {
         alert('Apenas arquivos com a extensão .mp3 são permitidos') 
+        
         return false;
       }
-
     });
 
     uploader.addEventListener('complete', ({ file }) => {
@@ -102,10 +115,9 @@
       }, 3000);
     });
 
-    socket.on('newSong', songs => {
-      console.log('saporra', songs);
-      $songsList.innerHTML = renderSongs(songs);
-    })
+    socket.on('getAllSongs', songs => renderSongs(songs));
+
+    socket.on('newSong', song => renderSongs(song));
 
     uploader.listenOnInput($songInput);
 
