@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link href="https://fonts.googleapis.com/css?family=Montserrat:400,500,600,700" rel="stylesheet">
+  <title>App maluco</title>
+  <style>
+    body {
+      font-family: 'Montserrat';
+      background-color: #000;
+      color: red;
+    }
+    ul {
+      list-style: none;
+    }
+    .wrapper {
+      display: flex;
+      justify-content: space-between;
+    }
+    .wrapper div {
+      flex: 1;
+    }
+    .wrapper div:last-child{
+      border-left: 1px solid red;
+    }
+    .alert {
+      background: #63dd69;
+      padding: 5px;
+      -webkit-box-shadow: inset 0px 0px 11px 0px rgba(0,0,0,0.75);
+      -moz-box-shadow: inset 0px 0px 11px 0px rgba(0,0,0,0.75);
+      box-shadow: inset 0px 0px 11px 0px rgba(0,0,0,0.75);
+      border-radius: 5px;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+      margin: 10px 0;
+      font-size: 12px;
+    }
+    .alert.visible {
+      opacity: 1;
+    }
+    input {
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>Playlist da galera</h1>
+  <hr>
+  <div class="wrapper">
+    <div>
+      <h2>Insira uma música para ser tocada pra galera</h2>
+      <input type="file" id="songInput" />
+      <div class="alert">Arquivo transferido com sucesso :)</div>
+    </div>
+    <div>
+      <h2>O que a galera escolheu?</h2>
+      <ul id="songs">
+        <li>
+          <audio controls>
+            <source type="audio/mp3" src="http://localhost:3000/songs/1.mp3" ></source>
+          </audio>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <script src="/siofu/client.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io(); // instância do lado client do socket.io
+    const uploader = new SocketIOFileUpload(socket); // instância do client socket.io file uploader
+    
+    const $ = document.querySelector.bind(document);
+    const $songInput = $('#songInput');
+    const $successAlert = $('.alert');
+    const $songsList = $('#songs');
+
+    const renderSongs = songs => {
+      return `${ songs.map(song => `<li><audio controls>
+        <source 
+          type="audio/mp3"
+          src=${song}
+        ></source>
+      </audio> </li>` ) }`
+    };
+
+    uploader.addEventListener('start', ({ file }) => {
+
+      if(file.type !== 'audio/mp3') {
+        alert('Apenas arquivos com a extensão .mp3 são permitidos') 
+        return false;
+      }
+
+    });
+
+    uploader.addEventListener('complete', ({ file }) => {
+      $successAlert.classList.toggle('visible');
+      setTimeout(() => {
+        $successAlert.classList.toggle('visible');
+      }, 3000);
+    });
+
+    socket.on('newSong', songs => {
+      console.log('saporra', songs);
+      $songsList.innerHTML = renderSongs(songs);
+    })
+
+    uploader.listenOnInput($songInput);
+
+  </script>
+</body>
+</html>
