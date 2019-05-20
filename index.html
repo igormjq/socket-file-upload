@@ -9,22 +9,32 @@
   <style>
     body {
       font-family: 'Montserrat';
-      background-color: #000;
-      color: red;
+      background: #cecece;
     }
     ul {
       list-style: none;
     }
-    .wrapper {
+
+    #songs {
+      padding: 0;
+    }
+
+    .song {
+      padding: 15px;
+    }
+    .mdc-card {
+      margin: 10px 0;
+      padding: 10px;
       display: flex;
-      justify-content: space-between;
+      align-items: center;
+      justify-content: center;
     }
-    .wrapper div {
-      flex: 1;
+    .wrapper {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-column-gap: 10px;
     }
-    .wrapper div:last-child{
-      border-left: 1px solid red;
-    }
+
     .alert {
       background: #63dd69;
       padding: 5px;
@@ -48,24 +58,17 @@
 <body>
   <h1>Playlist da galera</h1>
   <hr>
-  <div class="wrapper">
-    <div>
-      <h2>Insira uma música para ser tocada pra galera</h2>
-      <input type="file" id="songInput" />
-      <div class="alert">Arquivo transferido com sucesso :)</div>
+    <div class="wrapper">
+      <div class="mdc-card">
+        <h2>Insira uma música para ser tocada pra galera</h2>
+        <input type="file" id="songInput" />
+        <div class="alert">Arquivo transferido com sucesso :)</div>
+      </div>
+      <div class="mdc-card">
+        <h2>O que a galera escolheu?</h2>
+        <ul id="songs"></ul>
+      </div>
     </div>
-    <div>
-      <h2>O que a galera escolheu?</h2>
-      <ul id="songs">
-        <li>
-          <audio controls>
-            <source type="audio/mp3" src="http://localhost:3000/songs/metallica-seek-and-destroy.mp3" ></source>
-          </audio>
-        </li>
-      </ul>
-    </div>
-  </div>
-
   <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
   <script src="/siofu/client.js"></script>
   <script src="/socket.io/socket.io.js"></script>
@@ -73,31 +76,27 @@
     const socket = io(); // instância do lado client do socket.io
     const uploader = new SocketIOFileUpload(socket); // instância do client socket.io file uploader
     
-    const $ = document.querySelector.bind(document);
-    const $songInput = $('#songInput');
-    const $successAlert = $('.alert');
-    const $songsList = $('#songs');
+    const $ = document.querySelector.bind(document); // fake jQuery selector
+    const $songInput = $('#songInput'); // input onde são upadas as músicas
+    const $successAlert = $('.alert'); // alerta
+    const $songsList = $('#songs'); // seletor da lista de músicas
 
     const renderSongs = data => {
       const template = song => `
+        <div class="song mdc-elevation--z9">
           <li>
+            <p>${decodeURI(song.split('/songs/')[1])}</p>
             <audio controls>
               <source 
                 type="audio/mp3"
-                src=${window.location.origin}${encodeURI(song)}>
+                src=${song}>
               </source>
             </audio>
-          </li>`;
-
-      if(Array.isArray(data)) {
-        return $songsList.innerHTML = data.map(song => template(song)).join('');
-      }
-      
-      let $element = document.createElement('li');
-      $element.innerHTML = template(data);
-
-      return $songsList.appendChild($element);
-      
+            </li>
+         </div>`
+        ;
+ 
+      return $songsList.innerHTML = data.map(song => template(song)).join('');
     };
 
     uploader.addEventListener('start', ({ file }) => {

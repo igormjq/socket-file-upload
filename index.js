@@ -5,11 +5,15 @@ const io = require('socket.io')(http);
 const siofu = require("socketio-file-upload");
 const path = require('path');
 const fs = require('fs');
+const url = require('url');
+
+// Array inicial com referências da pasta songs
+let songs = [];
 
 const songsPath = path.resolve(__dirname, './songs/');
 
 // Lê o diretório '/songs' e adiciona ao array. Será a carga inicial da aplicação cliente na primeira conexão com o socket
-const getSongs = fs.readdirSync(songsPath).map(song => `/songs/${song}`);
+const getSongs = fs.readdirSync(songsPath).map(song => `http://localhost:3000/songs/${encodeURI(song)}`);
 
 app.use('/songs', express.static(__dirname + '/songs'));
 
@@ -26,11 +30,15 @@ io.on('connection', socket => {
   const uploader = new siofu();
   uploader.dir = songsPath;
   uploader.listen(socket);
+  
+  songs = getSongs;
 
-  io.emit('getAllSongs', getSongs);
+  io.emit('getAllSongs', songs);
 
   uploader.on('saved', ({ file }) => {
-    io.emit('newSong', `/songs/${file.name}`);
+    songs.push(`http://localhost:3000/songs/${encodeURI(file.name)}`);
+    console.log(songs);
+    io.emit('newSong', songs);
   });
 })
 
